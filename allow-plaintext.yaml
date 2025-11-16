@@ -1,0 +1,16 @@
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: postgres-allow-plaintext-5432
+  namespace: sql-db
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  # Keep STRICT for all other ports of this workload
+  mtls:
+    mode: STRICT
+  # Allow non-mTLS on Postgres port 5432
+  portLevelMtls:
+    5432:
+      mode: PERMISSIVE

@@ -1,0 +1,35 @@
+## need to run the deployment in Kubernetes first 
+## then deploy yaml files and get intenal LB IP to put in cloud_run 
+## run below to get LB IP 
+
+ kubectl get svc -n sql-db postgres-internal 
+## take external IP and put it in cloud run env variable DB_URL as 
+## postgres://<username>:<password>@<EXTERNAL_IP>:5432/<DB_NAME>
+## then deploy cloud run service with that env variable set
+
+##DELETE THIS AFTER TESTING
+postgres://KalebDemoSQL:Cubasfun1!@10.10.0.5:5432/tetrisappdb
+
+ ## still need to figure out how to make cloud run and sql communicate should just be adding env DB_URL and figuring out how to put postrgres username and password in secret manager
+
+ ## need to figure out which API's I need to enable and what roles SA needs
+
+ ## Need to figure out scoring system for tetris and how to send variables to the sql db need node.js apparently gonna be a bitch
+
+ ## having trouble figuring out how to upload values like the db username and password to the secret manager without displaying it in raw text in source file will probably create the secret but not the version here (in kubernetes) then put the values in in the UI to keep them actually secret
+
+
+## having a hard time with secret manager need to ask Abhinav about this / study more don't bother him
+
+ # Create namespace if needed
+kubectl create namespace sql-db 2>$null
+
+# Create secret (do NOT commit this)
+kubectl create secret generic postgres-secret `
+  -n sql-db `
+  --from-literal=username=appuser `
+  --from-literal=password='<STRONG_PASSWORD>'
+
+# Deploy StatefulSet and internal LB service
+kubectl apply -f .\Kubernetes\k8s_sql_db_statefulset.yaml
+kubectl apply -f .\Kubernetes\k8s_sql_db_service_internal.yaml
