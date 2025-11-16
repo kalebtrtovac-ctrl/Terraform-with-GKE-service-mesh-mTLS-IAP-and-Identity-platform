@@ -1,0 +1,100 @@
+# PostgreSQL StatefulSet pinned to the dedicated SQL node pool
+# Apply after cluster is up: kubectl apply -f k8s_sql_db_statefulset.yaml
+# Requires a StorageClass (GKE default 'standard-rwo').
+# If using Workload Identity + GCP resources, attach appropriate serviceAccount.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sql-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: sql-db
+  labels:
+    app: postgres
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None  # Headless for StatefulSet
+  selector:
+    app: postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: sql-db
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      nodeSelector:
+        role: sql-db
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "sql"
+          effect: "NoSchedule"
+      containers:
+        - name: postgres
+          image: postgres:15-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: tetrisappdb
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+      # Consider a dedicated serviceAccount if interacting with GCP services
+      # serviceAccountName: postgres-sa
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: standard-rwo
+---
+
+## settled on just deleting the secret yaml / changing username password and db name when I push to github
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: sql-db
+stringData:
+  username: enteryourusernamehere
+  password: enteryourpasswordhere

@@ -1,0 +1,16 @@
+# Internal LoadBalancer Service exposing PostgreSQL to VPC clients (e.g., Cloud Run via VPC connector)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-internal
+  namespace: sql-db
+  annotations:
+    cloud.google.com/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
