@@ -7,9 +7,6 @@
 ## postgres://<username>:<password>@<EXTERNAL_IP>:5432/<DB_NAME>
 ## then deploy cloud run service with that env variable set
 
-##DELETE THIS AFTER TESTING
-postgres://KalebDemoSQL:Cubasfun1!@10.10.0.5:5432/tetrisappdb
-
  ## still need to figure out how to make cloud run and sql communicate should just be adding env DB_URL and figuring out how to put postrgres username and password in secret manager
 
  ## need to figure out which API's I need to enable and what roles SA needs
@@ -32,4 +29,5 @@ kubectl create secret generic postgres-secret `
 
 # Deploy StatefulSet and internal LB service
 kubectl apply -f .\Kubernetes\k8s_sql_db_statefulset.yaml
+
 kubectl apply -f .\Kubernetes\k8s_sql_db_service_internal.yaml
